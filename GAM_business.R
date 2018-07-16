@@ -74,3 +74,21 @@ lines(hits_grid, pred2$fit2+2*pred2$se, lty="dashed")
 lines(hits_grid, pred2$fit2-2*pred2$se, lty="dashed")
 
 #GAM 
+library(gam)
+set.seed(1)
+train = sample(1980, 990)
+gam1 <- lm(Viewers ~ ns(hits, df = 10) + Home + Away + All_Star + Weekday, data = df_trend_event_noNA, subset = train)
+attach(df_trend_event_noNA)
+mean((Viewers-predict(gam1))[-train]^2)
+pred <- predict(gam1,df_trend_event_noNA[-train,])
+err.rate <- sum(abs((df_trend_event_noNA[-train,]$Viewers - pred)/df_trend_event_noNA[-train,]$Viewers))/990
+# 0.3674
+gam.m1 <- gam(Viewers~s(hits, df = 10) + Home + Away + All_Star + Weekday, data = df_trend_event_noNA)
+summary(gam1)
+
+par(mfrow=c(1,5))
+plot(gam.m1, se=TRUE, col = "blue")
+plot.Gam(gam1, se=TRUE, col="red")
+
+gam.m2 <- gam(Viewers~s(hits, df = 10) + Home + Away + All_Star + Weekday, data = df_trend_event_noNA)
+anova(gam.m2)

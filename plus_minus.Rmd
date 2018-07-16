@@ -1,0 +1,52 @@
+---
+title: "plus/minus"
+author: "Xiang Zhao"
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(readr)
+library(tidyverse)
+```
+
+```{r}
+code <- fread("NBA Hackathon - Event Codes.txt")
+game <- read.table("NBA Hackathon - Game Lineup Data Sample.txt",header = TRUE)
+play <- read.table("NBA Hackathon - Play by Play Data Sample.txt",header = TRUE)
+game[,c(1,3,4,5)] <- apply(game[,c(1,3,4,5)],2,as.character)
+play[,c(1,11,12,13)] <- apply(play[,c(1,11,12,13)],2,as.character)
+```
+
+```{r}
+action <- code%>%
+  count(Event_Msg_Type)
+
+code%>%
+  filter(Event_Msg_Type==3&Action_Type==11)
+game%>%
+  count(status)
+play%>%
+  select(Event_Num,Team_id)%>%
+  filter(Event_Num==0)
+  
+fix(play)
+```
+
+```{r}
+a <- left_join(play,game[,c(3:4)],by=c("Person1"="Person_id"))
+```
+
+```{r}
+scored <- play%>%
+  select(Game_id,Period,Event_Msg_Type,Action_Type,PC_Time,Option1,Team_id,Person1,Person2)%>%
+  filter(Event_Msg_Type==1|Event_Msg_Type==3|Event_Msg_Type==8)B
+df_scored <- scored%>%
+  group_by(Game_id,Period)%>%
+  arrange(Game_id,Period,desc(PC_Time))
+  
+  
+```
+
