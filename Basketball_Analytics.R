@@ -37,13 +37,16 @@ order_play <- play_by_play %>%
 # merge datasets
 gm_id <- unique(game_lineup$Game_id)
 merged_play <- list()
-for (i in 1:length(gm_id)) {
+game_player <- list()
+game_evnt <- list()
+for (i in 1:50) {
   game_player <- unique(filter(game_lineup, game_lineup$Game_id == gm_id[i])[,3:4])
-  game_event <- filter(play_by_play, play_by_play$Game_id == gm_id[i])
+  game_event <- filter(df_scored, df_scored$Game_id == gm_id[i])
   merged_play[[i]] <- left_join(game_event, game_player, by = c("Person1"="Person_id"))
 }
 
-game_player1 <- unique(filter(game_lineup, game_lineup$Game_id == gm_id[1])[,3:4])
-game_event1 <- filter(df_scored, df_scored$Game_id == gm_id[1])
-merged_play[[1]] <- left_join(game_event1, game_player1, by = c("Person1"="Person_id"))
-merged_temp <- merged_play[[1]]
+merged_temp <- list()
+game_player1 <- unique(filter(game_lineup, game_lineup$Game_id == gm_id[3])[,3:4])
+game_event1 <- filter(df_scored, df_scored$Game_id == gm_id[3])
+merged_temp[[3]] <- left_join(game_event1, game_player1, by = c("Person1"="Person_id"))
+merged_temp <- merged_play[3]
