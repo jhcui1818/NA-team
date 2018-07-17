@@ -34,10 +34,10 @@ for (i in 1:nrow(temp)){
 }
 
 # according to substitue player's team id to assign their team id in other events they involved as person1
-sub_team <- df_merged_play %>%
+sub_team <- df_team %>%
   filter(Event_Msg_Type == 8) %>%
   select(Game_id, Person1, Person1_Team_id)
-sub_team <- unique(sub_team)
+sub_team <- unique(sub_team[,2:4])
 colnames(sub_team)[3] <- "sub_Team_id"
-df_sub_merged <- df_merged_play %>%
+df_sub_merged <- df_team %>%
   left_join(sub_team, by = c("Person1", "Game_id"))
