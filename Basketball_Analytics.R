@@ -37,16 +37,34 @@ order_play <- play_by_play %>%
 # merge datasets
 gm_id <- unique(game_lineup$Game_id)
 merged_play <- list()
-game_player <- list()
-game_evnt <- list()
+
+
 for (i in 1:50) {
   game_player <- unique(filter(game_lineup, game_lineup$Game_id == gm_id[i])[,3:4])
-  game_event <- filter(df_scored, df_scored$Game_id == gm_id[i])
+  game_event <- df_scored %>% 
+    filter(Game_id == gm_id[i])
   merged_play[[i]] <- left_join(game_event, game_player, by = c("Person1"="Person_id"))
 }
+library(data.table)
+df_merged_play <- rbindlist(merged_play)
 
-merged_temp <- list()
-game_player1 <- unique(filter(game_lineup, game_lineup$Game_id == gm_id[3])[,3:4])
-game_event1 <- filter(df_scored, df_scored$Game_id == gm_id[3])
-merged_temp[[3]] <- left_join(game_event1, game_player1, by = c("Person1"="Person_id"))
-merged_temp <- merged_play[3]
+game_team <- game_lineup %>%
+  group_by(Game_id, Team_id) %>%
+  summarise(n=n())
+game_team$Team <- rep(c("team1", "team2"),50)
+library(tidyr)
+
+game_team <- game_team %>% spread(Team, Team_id)
+df_merged_play <- left_join(df_merged_play, game_team[,c(1,3,4)], by = "Game_id")
+sub_id <- df_merged_play %>%
+  filter(Event_Msg_Type == 8 & is.na(Team_id.y) == TRUE)
+na_team_id <- df_merged_play %>%
+  filter(is.na(Team_id.y) == TRUE)
+a <- unique(game_lineup[,3:4])
+b <- unique(game_lineup[,c(1,3,4)])
+c <- left_join(a, b, by = c("Person_id", "Team_id"))
+rep_a <- a %>% 
+  group_by(Person_id) %>%
+  summarise(n=n()) %>%
+  filter(n == 2) %>%
+  left_join(b, by = "Person_id")
