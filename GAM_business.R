@@ -102,3 +102,6 @@ plot.Gam(gam1, se=TRUE, col="red")
 
 gam.m2 <- gam(Viewers~s(hits, df = 10) + Home + Away + All_Star + Weekday, data = df_trend_event_noNA)
 anova(gam.m2)
+library(ggplot2)
+ggplot(df_trend_event, aes(Viewers)) +
+  geom_histogram()

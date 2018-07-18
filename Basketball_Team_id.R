@@ -1,3 +1,15 @@
+library(dplyr)
+event_codes <- read.table("data/NBA Hackathon - Event Codes.txt", header = TRUE, fill = TRUE)
+game_lineup <- read.table("data/NBA Hackathon - Game Lineup Data Sample (50 Games).txt", header = TRUE)
+play_by_play <- read.table("data/NBA Hackathon - Play by Play Data Sample (50 Games).txt", header = TRUE)
+
+# Select needed variables, keep only scored, free throw and substitution events
+scored <- play_by_play%>%
+  select(Game_id,Event_Num,Period,Event_Msg_Type,Action_Type,PC_Time,Option1,Team_id,Person1,Person2)%>%
+  filter(Event_Msg_Type==1|Event_Msg_Type==3|Event_Msg_Type==8)
+df_scored <- scored%>%
+  group_by(Game_id,Period)%>%
+  arrange(Game_id,Period,desc(PC_Time))
 # Starting players' team id
 # 224 NAs left
 unique_game <- unique(game_lineup[,c(1,3,4)])
@@ -36,8 +48,29 @@ for (i in 1:nrow(temp)){
 # according to substitue player's team id to assign their team id in other events they involved as person1
 sub_team <- df_team %>%
   filter(Event_Msg_Type == 8) %>%
-  select(Game_id, Person1, Person1_Team_id)
-sub_team <- unique(sub_team[,2:4])
+  ungroup() %>%
+  select(Game_id, Person2, Person1_Team_id)
+sub_team <- unique(sub_team)
 colnames(sub_team)[3] <- "sub_Team_id"
-df_sub_merged <- df_team %>%
-  left_join(sub_team, by = c("Person1", "Game_id"))
+df_sub_merged <- temp %>%
+  filter(is.na(Person1_Team_id)) %>%
+  left_join(sub_team, by = c("Game_id", "Person1" = "Person2"))
+df_sub_merged$sub_Team_id <- as.character(df_sub_merged$sub_Team_id)
+for (i in 1:nrow(df_sub_merged)){
+  df_sub_merged$Person1_Team_id[i] <- ifelse(df_sub_merged$sub_Team_id[i] == df_sub_merged$team1[i] | df_sub_merged$sub_Team_id[i] == df_sub_merged$team2[i], df_sub_merged$sub_Team_id[i], NA)
+}
+
+#
+LastNA <- df_sub_merged %>%
+  filter(is.na(Person1_Team_id))
+sub_team2 <- df_sub_merged %>%
+  ungroup() %>%
+  filter(!is.na(Person1_Team_id)) %>%
+  select(Game_id, Person1, Person1_Team_id)
+sub_team2 <- unique(sub_team2)
+sub_merged2 <- df_sub_merged %>%
+  filter(is.na(Person1_Team_id)) %>%
+  left_join(sub_team2, by = c("Game_id", "Person1"))
+for (i in 1:nrow(sub_merged2)){
+  sub_merged2$Person1_Team_id.x[i] <- ifelse(sub_merged2$Person1_Team_id.y[i] == sub_merged2$team1[i] | sub_merged2$Person1_Team_id.y[i] == sub_merged2$team2[i], sub_merged2$Person1_Team_id.y[i], NA)
+}
