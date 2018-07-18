@@ -1,6 +1,6 @@
 load("data/ggTrend_time.rda")
-# create a timeline for plot from 2016-10-25 to 2018-04-11
-timeline <- data.frame(seq(from = as.Date("2016/10/25"), to = as.Date("2018/04/11"), by = "day"))
+# create a timeline for plot from 2016-10-25 to 2018-04-16
+timeline <- data.frame(seq(from = as.Date("2016/10/25"), to = as.Date("2018/04/16"), by = "day"))
 colnames(timeline) <- "date"
 library(dplyr)
 ggTrend_time$date <- as.Date(ggTrend_time$date)
@@ -34,7 +34,7 @@ viewer$Game_Date <- as.Date(viewer$Game_Date)
 df_trend_event <- viewer %>%
   left_join(df_trend_NBA, by = c("Game_Date" = "date")) %>%
   select(Game_ID, Viewers, Game_Date, Home, Away, All_Star, Weekday, hits)
-
+saveRDS(df_trend_event, file = "data/df_trend_event.rds")
 # Splines for All_Star
 library(boot)
 cv.error.6 = rep(0,6)
@@ -76,15 +76,25 @@ lines(hits_grid, pred2$fit2-2*pred2$se, lty="dashed")
 #GAM 
 library(gam)
 set.seed(1)
-train = sample(1980, 990)
+train = sample(2000, 1000)
 gam1 <- lm(Viewers ~ ns(hits, df = 10) + Home + Away + All_Star + Weekday, data = df_trend_event_noNA, subset = train)
-attach(df_trend_event_noNA)
+attach(df_trend_event)
 mean((Viewers-predict(gam1))[-train]^2)
 pred <- predict(gam1,df_trend_event_noNA[-train,])
 err.rate <- sum(abs((df_trend_event_noNA[-train,]$Viewers - pred)/df_trend_event_noNA[-train,]$Viewers))/990
 # 0.3674
+gam2 <- lm(Viewers ~ Home + Away + All_Star + Weekday, data = df_trend_event, subset = train)
+mean((Viewers-predict(gam2))[-train]^2)
+pred <- predict(gam2,df_trend_event[-train,])
+err.rate <- sum(abs((df_trend_event[-train,]$Viewers - pred)/df_trend_event[-train,]$Viewers))/1000
+err.rate
+
+train2 = sample(1980,990)
 gam.m1 <- gam(Viewers~s(hits, df = 10) + Home + Away + All_Star + Weekday, data = df_trend_event_noNA)
-summary(gam1)
+pred.m1 <- predict(gam.m1,df_trend_event_noNA[-train,])
+err.rate <- sum(abs((df_trend_event_noNA[-train,]$Viewers - pred.m1)/df_trend_event_noNA[-train,]$Viewers))/990
+err.rate
+plot(df_trend_event_noNA[-train,]$Viewers)
 
 par(mfrow=c(1,5))
 plot(gam.m1, se=TRUE, col = "blue")
