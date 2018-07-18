@@ -105,3 +105,8 @@ anova(gam.m2)
 library(ggplot2)
 ggplot(df_trend_event, aes(Viewers)) +
   geom_histogram()
+
+data_poisson <- data.frame(rpois(2000,16968))
+colnames(data_poisson) <- "Viewers"
+ggplot(data_poisson, aes(Viewers)) +
+  geom_histogram()

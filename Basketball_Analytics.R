@@ -134,3 +134,47 @@ df_merged_play2 <- left_join(df_merged_play, game_team)
 t <- df_merged_play[-which(is.na(df_merged_play$Person2_Team_id)),]
 identical(t$Person1_Team_id, t$Person2_Team_id)
 #person1 and person2 are always in the same team
+
+##########################
+# Player who is not starting in this game but is starting in others and do not change teams in the middle
+# need to add the temp data frame to the df_team
+# 69 Nas left
+a <- unique(game_lineup[,3:4])
+temp <- df_team %>%
+  filter(is.na(Person1_Team_id)) %>%
+  left_join(a, by = c("Person1"="Person_id"))
+temp[,8:15] <- apply(temp[,8:15],2,as.character)
+for (i in 1:nrow(temp)){
+  temp$Person1_Team_id[i] <- ifelse(temp$Team_id[i] == temp$team1[i] | temp$Team_id[i] == temp$team2[i], temp$Team_id[i], NA)
+}
+
+##############################
+# according to substitue player's team id to assign their team id in other events they involved as person1
+sub_team <- df_team %>%
+  filter(Event_Msg_Type == 8) %>%
+  ungroup() %>%
+  select(Game_id, Person2, Person1_Team_id)
+sub_team <- unique(sub_team)
+colnames(sub_team)[3] <- "sub_Team_id"
+df_sub_merged <- temp %>%
+  filter(is.na(Person1_Team_id)) %>%
+  left_join(sub_team, by = c("Game_id", "Person1" = "Person2"))
+df_sub_merged$sub_Team_id <- as.character(df_sub_merged$sub_Team_id)
+for (i in 1:nrow(df_sub_merged)){
+  df_sub_merged$Person1_Team_id[i] <- ifelse(df_sub_merged$sub_Team_id[i] == df_sub_merged$team1[i] | df_sub_merged$sub_Team_id[i] == df_sub_merged$team2[i], df_sub_merged$sub_Team_id[i], NA)
+}
+
+#
+LastNA <- df_sub_merged %>%
+  filter(is.na(Person1_Team_id))
+sub_team2 <- df_sub_merged %>%
+  ungroup() %>%
+  filter(!is.na(Person1_Team_id)) %>%
+  select(Game_id, Person1, Person1_Team_id)
+sub_team2 <- unique(sub_team2)
+sub_merged2 <- df_sub_merged %>%
+  filter(is.na(Person1_Team_id)) %>%
+  left_join(sub_team2, by = c("Game_id", "Person1"))
+for (i in 1:nrow(sub_merged2)){
+  sub_merged2$Person1_Team_id.x[i] <- ifelse(sub_merged2$Person1_Team_id.y[i] == sub_merged2$team1[i] | sub_merged2$Person1_Team_id.y[i] == sub_merged2$team2[i], sub_merged2$Person1_Team_id.y[i], NA)
+}
